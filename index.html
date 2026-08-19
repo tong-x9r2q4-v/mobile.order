@@ -155,6 +155,7 @@
     const STORE_PIN = "1234";
     let tapCount = 0, tapTimer = null;
     let storePeer = null, customerPeer = null, currentConn = null;
+    let statusCheckTimer = null;
     
     let orders = JSON.parse(localStorage.getItem('store_orders') || '[]');
     let totalServed = parseInt(localStorage.getItem('store_total') || '0');
@@ -186,6 +187,7 @@
 
     // --- 店舗端末の処理 ---
     function openStoreView() {
+      if (statusCheckTimer) clearInterval(statusCheckTimer);
       document.getElementById('customer-view').classList.add('hidden');
       document.getElementById('store-view').classList.remove('hidden');
 
@@ -326,14 +328,6 @@
 
     // --- お客様側の処理 ---
     function sendOrder() {
-      const lastOrderTime = parseInt(localStorage.getItem('cust_last_time') || '0');
-      const now = Date.now();
-      if (now - lastOrderTime < 60000) {
-        const remaining = Math.ceil((60000 - (now - lastOrderTime)) / 1000);
-        alert(`連打防止のため、あと ${remaining} 秒間は再注文できません。`);
-        return;
-      }
-
       const name = document.getElementById('username').value.trim();
       const isEco = document.getElementById('eco-checkbox').checked;
 
@@ -342,8 +336,14 @@
         return;
       }
 
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = "送信中...";
+
       const orderId = 'ord_' + Date.now();
       customerPeer = new Peer();
+
+      let orderAccepted = false;
 
       customerPeer.on('open', () => {
         currentConn = customerPeer.connect('paper-cup-store-secret');
@@ -359,20 +359,27 @@
 
         currentConn.on('data', (data) => {
           if (data.type === 'accepted') {
-            localStorage.setItem('cust_last_time', Date.now());
+            orderAccepted = true;
+            submitBtn.disabled = false;
+            submitBtn.innerText = "注文を送信する";
             activeOrder = { id: orderId, num: data.orderNum, name: name, isEco: isEco, status: 'pending' };
             localStorage.setItem('cust_active_order', JSON.stringify(activeOrder));
             renderCustomerActiveOrder();
           } else if (data.type === 'rejected') {
+            orderAccepted = true;
+            submitBtn.disabled = false;
+            submitBtn.innerText = "注文を送信する";
             alert("⚠️ " + data.reason);
           }
         });
 
         setTimeout(() => {
-          if (!activeOrder) {
-            alert("❌ 店舗端末と接続できませんでした。受付画面が開いているか確認してください。");
+          if (!orderAccepted && !activeOrder) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "注文を送信する";
+            alert("❌ 店舗端末からの返答がありませんでした。もう一度お試しいただくか、窓口でお伝えください。");
           }
-        }, 3000);
+        }, 5000);
       });
     }
 
@@ -385,6 +392,7 @@
     }
 
     function clearCustomerActiveOrder() {
+      if (statusCheckTimer) clearInterval(statusCheckTimer);
       activeOrder = null;
       localStorage.removeItem('cust_active_order');
       document.getElementById('active-order-card').classList.add('hidden');
@@ -401,7 +409,9 @@
       if (activeOrder.isEco) ecoNot.classList.remove('hidden');
       else ecoNot.classList.add('hidden');
 
-      const checkInterval = setInterval(() => {
+      if (statusCheckTimer) clearInterval(statusCheckTimer);
+
+      statusCheckTimer = setInterval(() => {
         const storedOrders = JSON.parse(localStorage.getItem('store_orders') || '[]');
         const target = storedOrders.find(o => o.id === activeOrder.id);
 
@@ -414,13 +424,10 @@
               : "🥤 出来上がりました！窓口でお受け取りください。";
             document.getElementById('cancel-btn').classList.add('hidden');
           } else if (target.status === 'done') {
-            clearInterval(checkInterval);
+            clearInterval(statusCheckTimer);
             document.getElementById('active-order-card').classList.add('hidden');
             document.getElementById('completed-card').classList.remove('hidden');
           }
-        } else if (activeOrder) {
-          clearInterval(checkInterval);
-          clearCustomerActiveOrder();
         }
       }, 1000);
     }
