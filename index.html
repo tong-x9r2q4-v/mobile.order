@@ -8,7 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col justify-between antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col justify-between antialiased">
 
   <!-- 1. 注文画面（お客様用） -->
   <main id="customer-view" class="w-full max-w-md mx-auto p-5 flex-1 flex flex-col justify-between">
@@ -22,7 +22,7 @@
       </div>
 
       <!-- 一時停止アラート -->
-      <div id="pause-alert" class="hidden p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-center text-xs font-bold shadow-sm">
+      <div id="pause-alert" class="hidden p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-center text-xs font-bold">
         ⚠️ ただいま一時的に注文の受付を停止しております
       </div>
 
@@ -35,15 +35,20 @@
         </div>
 
         <!-- マイボトル選択（Eco機能） -->
-        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between cursor-pointer" onclick="toggleEco()">
-          <div class="flex items-center space-x-3">
-            <span class="text-2xl">🌱</span>
-            <div>
-              <div class="font-bold text-slate-800 text-xs">マイボトル持参（Eco）</div>
-              <div class="text-[10px] text-slate-500">紙コップを使用せず持参容器に注ぎます</div>
+        <div class="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-200/80 flex flex-col space-y-2 cursor-pointer" onclick="toggleEco()">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-2xl">🌱</span>
+              <div>
+                <div class="font-bold text-emerald-900 text-xs">マイボトル持参（Eco利用）</div>
+                <div class="text-[10px] text-emerald-700">紙コップを使用せず持参容器を使います</div>
+              </div>
             </div>
+            <input type="checkbox" id="eco-checkbox" class="w-5 h-5 accent-emerald-600 rounded cursor-pointer" onclick="event.stopPropagation()">
           </div>
-          <input type="checkbox" id="eco-checkbox" class="w-5 h-5 accent-emerald-600 rounded cursor-pointer" onclick="event.stopPropagation()">
+          <div class="text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-lg text-center">
+            ⚠️ 持参容器は窓口まで持ってお越しください
+          </div>
         </div>
 
         <button id="submit-btn" onclick="sendOrder()"
@@ -52,30 +57,40 @@
         </button>
       </div>
 
-      <!-- アクティブな注文ステータス画面 -->
+      <!-- リアルタイム受付状態画面 -->
       <div id="active-order-card" class="hidden bg-white p-5 rounded-3xl shadow-md border border-slate-200 space-y-4">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">受付番号</span>
             <div id="my-order-num" class="text-3xl font-extrabold text-indigo-600">#000</div>
           </div>
-          <span id="order-status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 animate-pulse">
-            準備中...
+          <span id="order-status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+            ご用意中...
           </span>
         </div>
 
-        <!-- Ecoモニター表示 -->
-        <div id="eco-monitor" class="hidden p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-1">
-          <div class="text-xs font-bold text-emerald-800">🌍 Eco モニター</div>
-          <p class="text-[11px] text-emerald-700">マイボトル利用により、紙コップ1個分のごみを削減しました！</p>
+        <!-- Eco時の案内（呼び出し時共通） -->
+        <div id="eco-notice" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-1">
+          <div class="text-xs font-bold text-amber-800">🌱 持参容器のご案内</div>
+          <p class="text-[11px] font-semibold text-amber-700">持参容器を持って窓口までお越しください！</p>
         </div>
 
         <div id="status-message" class="text-center py-2 text-sm font-bold text-slate-700">
-          店舗で準備を行っています。しばらくお待ちください。
+          順番にお作りしております。しばらくお待ちください。
         </div>
 
         <button id="cancel-btn" onclick="cancelOrder()" class="w-full py-2.5 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-semibold rounded-xl text-xs transition border border-slate-200">
           注文をキャンセルする
+        </button>
+      </div>
+
+      <!-- 受け渡し完了時の感謝画面 -->
+      <div id="completed-card" class="hidden bg-emerald-50 border border-emerald-200 p-6 rounded-3xl text-center space-y-3">
+        <div class="text-4xl">🎉</div>
+        <h2 class="text-lg font-bold text-emerald-900">お受け取りありがとうございました！</h2>
+        <p class="text-xs text-emerald-700">またのご利用をお待ちしております。</p>
+        <button onclick="clearCustomerActiveOrder()" class="mt-2 px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl text-xs">
+          次へ進む
         </button>
       </div>
     </div>
@@ -102,7 +117,7 @@
         </button>
       </div>
 
-      <!-- 各種切り替え＆集計 -->
+      <!-- 集計＆受付停止 -->
       <div class="grid grid-cols-3 gap-2 text-center pt-2 border-t border-slate-100">
         <div class="p-2 bg-slate-50 rounded-xl border border-slate-100">
           <div class="text-[10px] text-slate-400 font-bold">本日提供数</div>
@@ -141,14 +156,12 @@
     let tapCount = 0, tapTimer = null;
     let storePeer = null, customerPeer = null, currentConn = null;
     
-    // 店舗側データ（LocalStorage保持）
     let orders = JSON.parse(localStorage.getItem('store_orders') || '[]');
     let totalServed = parseInt(localStorage.getItem('store_total') || '0');
     let ecoServed = parseInt(localStorage.getItem('store_eco') || '0');
     let isPaused = localStorage.getItem('store_paused') === 'true';
     let nextOrderNum = parseInt(localStorage.getItem('store_next_num') || '1');
 
-    // お客様側アクティブ注文
     let activeOrder = JSON.parse(localStorage.getItem('cust_active_order') || 'null');
 
     window.onload = () => {
@@ -160,7 +173,6 @@
       cb.checked = !cb.checked;
     }
 
-    // --- 隠しコマンド（3回タップ） ---
     function handleSecretTap() {
       tapCount++;
       clearTimeout(tapTimer);
@@ -172,7 +184,7 @@
       }
     }
 
-    // --- 店舗受信用画面の制御 ---
+    // --- 店舗端末の処理 ---
     function openStoreView() {
       document.getElementById('customer-view').classList.add('hidden');
       document.getElementById('store-view').classList.remove('hidden');
@@ -187,7 +199,6 @@
               conn.send({ type: 'rejected', reason: '一時受付停止中' });
               return;
             }
-            // 重複ブロック判定
             const numStr = String(nextOrderNum).padStart(3, '0');
             nextOrderNum++;
             localStorage.setItem('store_next_num', nextOrderNum);
@@ -205,10 +216,7 @@
             saveStoreData();
             renderStoreOrders();
 
-            // 振動通知
             if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-
-            // 注文元へレスポンス
             conn.send({ type: 'accepted', orderNum: newOrder.num });
           } else if (data.type === 'cancel') {
             orders = orders.filter(o => o.id !== data.id);
@@ -250,7 +258,7 @@
       const empty = document.getElementById('empty-state');
       list.innerHTML = '';
 
-      const pendingOrders = orders.filter(o => o.status === 'pending');
+      const pendingOrders = orders.filter(o => o.status !== 'done');
       document.getElementById('pending-count').innerText = `${pendingOrders.length} 件`;
 
       if (orders.length === 0) {
@@ -261,26 +269,28 @@
 
       orders.forEach(o => {
         const li = document.createElement('li');
-        li.className = `p-3 rounded-2xl border flex items-center justify-between ${o.status === 'ready' ? 'bg-emerald-50/60 border-emerald-200' : 'bg-slate-50 border-slate-200'}`;
+        li.className = `p-3 rounded-2xl border flex items-center justify-between ${o.status === 'ready' ? 'bg-amber-50/80 border-amber-300' : 'bg-slate-50 border-slate-200'}`;
         li.innerHTML = `
           <div>
             <div class="flex items-center space-x-2">
               <span class="font-extrabold text-indigo-600 text-sm">${o.num}</span>
               <span class="font-bold text-slate-800 text-sm">${o.name} 様</span>
-              ${o.isEco ? '<span class="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md font-bold">🌱 Eco</span>' : ''}
+              ${o.isEco ? '<span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">🌱 持参容器</span>' : ''}
             </div>
             <div class="text-[10px] text-slate-400 mt-0.5">${o.time}</div>
           </div>
           <div class="flex space-x-1.5">
             ${o.status === 'pending' ? `
               <button onclick="callCustomer('${o.id}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm">
-                呼出
+                呼び出す
               </button>
             ` : `
-              <span class="px-2 py-1 text-[10px] font-bold text-emerald-600 bg-emerald-100 rounded-lg">呼出中</span>
+              <button onclick="finishOrder('${o.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm">
+                渡しました
+              </button>
             `}
-            <button onclick="completeOrder('${o.id}')" class="px-2.5 py-1.5 bg-slate-200 hover:bg-rose-100 text-slate-600 hover:text-rose-600 font-bold text-xs rounded-xl">
-              消去
+            <button onclick="removeOrder('${o.id}')" class="px-2 py-1.5 bg-slate-200 hover:bg-rose-100 text-slate-500 hover:text-rose-600 font-bold text-xs rounded-xl">
+              削除
             </button>
           </div>
         `;
@@ -297,20 +307,25 @@
       }
     }
 
-    function completeOrder(id) {
+    function finishOrder(id) {
       const order = orders.find(o => o.id === id);
       if (order) {
+        order.status = 'done';
         totalServed++;
         if (order.isEco) ecoServed++;
-        orders = orders.filter(o => o.id !== id);
         saveStoreData();
         updateStoreUI();
       }
     }
 
+    function removeOrder(id) {
+      orders = orders.filter(o => o.id !== id);
+      saveStoreData();
+      updateStoreUI();
+    }
+
     // --- お客様側の処理 ---
     function sendOrder() {
-      // 1分クールダウン制御
       const lastOrderTime = parseInt(localStorage.getItem('cust_last_time') || '0');
       const now = Date.now();
       if (now - lastOrderTime < 60000) {
@@ -373,6 +388,7 @@
       activeOrder = null;
       localStorage.removeItem('cust_active_order');
       document.getElementById('active-order-card').classList.add('hidden');
+      document.getElementById('completed-card').classList.add('hidden');
       document.getElementById('order-form-card').classList.remove('hidden');
     }
 
@@ -381,24 +397,29 @@
       document.getElementById('active-order-card').classList.remove('hidden');
       document.getElementById('my-order-num').innerText = activeOrder.num;
 
-      const ecoMon = document.getElementById('eco-monitor');
-      if (activeOrder.isEco) ecoMon.classList.remove('hidden');
-      else ecoMon.classList.add('hidden');
+      const ecoNot = document.getElementById('eco-notice');
+      if (activeOrder.isEco) ecoNot.classList.remove('hidden');
+      else ecoNot.classList.add('hidden');
 
-      // 状態チェック用定期監視（擬似同期）
       const checkInterval = setInterval(() => {
         const storedOrders = JSON.parse(localStorage.getItem('store_orders') || '[]');
         const target = storedOrders.find(o => o.id === activeOrder.id);
-        
-        if (target && target.status === 'ready') {
-          document.getElementById('order-status-badge').innerText = "準備完了";
-          document.getElementById('order-status-badge').className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 animate-bounce";
-          document.getElementById('status-message').innerText = "🥤 準備が整いました！窓口へお越しください。";
-          document.getElementById('cancel-btn').classList.add('hidden');
-        } else if (!target && activeOrder) {
-          // 店舗側で消去された場合
+
+        if (target) {
+          if (target.status === 'ready') {
+            document.getElementById('order-status-badge').innerText = "出来上がりました";
+            document.getElementById('order-status-badge').className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-200 text-amber-900 animate-bounce";
+            document.getElementById('status-message').innerHTML = activeOrder.isEco 
+              ? "🥤 出来上がりました！<b>持参容器を持って</b>窓口へお越しください。" 
+              : "🥤 出来上がりました！窓口でお受け取りください。";
+            document.getElementById('cancel-btn').classList.add('hidden');
+          } else if (target.status === 'done') {
+            clearInterval(checkInterval);
+            document.getElementById('active-order-card').classList.add('hidden');
+            document.getElementById('completed-card').classList.remove('hidden');
+          }
+        } else if (activeOrder) {
           clearInterval(checkInterval);
-          alert("お渡しが完了しました。ご利用ありがとうございました！");
           clearCustomerActiveOrder();
         }
       }, 1000);
