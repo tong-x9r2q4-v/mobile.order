@@ -26,7 +26,7 @@
         ⚠️ ただいま一時的に注文の受付を停止しております
       </div>
 
-      <!-- 注文フォーム -->
+      <!-- 注文フォーム（常に表示） -->
       <div id="order-form-card" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 space-y-4">
         <div>
           <label for="username" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">お名前</label>
@@ -54,43 +54,6 @@
         <button id="submit-btn" onclick="sendOrder()"
           class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 transition text-sm flex items-center justify-center space-x-2">
           <span>注文を送信する</span>
-        </button>
-      </div>
-
-      <!-- リアルタイム受付状態画面 -->
-      <div id="active-order-card" class="hidden bg-white p-5 rounded-3xl shadow-md border border-slate-200 space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div>
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">受付番号</span>
-            <div id="my-order-num" class="text-3xl font-extrabold text-indigo-600">#000</div>
-          </div>
-          <span id="order-status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
-            ご用意中...
-          </span>
-        </div>
-
-        <!-- Eco時の案内（呼び出し時共通） -->
-        <div id="eco-notice" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-1">
-          <div class="text-xs font-bold text-amber-800">🌱 持参容器のご案内</div>
-          <p class="text-[11px] font-semibold text-amber-700">持参容器を持って窓口までお越しください！</p>
-        </div>
-
-        <div id="status-message" class="text-center py-2 text-sm font-bold text-slate-700">
-          順番にお作りしております。しばらくお待ちください。
-        </div>
-
-        <button id="cancel-btn" onclick="cancelOrder()" class="w-full py-2.5 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-semibold rounded-xl text-xs transition border border-slate-200">
-          注文をキャンセルする
-        </button>
-      </div>
-
-      <!-- 受け渡し完了時の感謝画面 -->
-      <div id="completed-card" class="hidden bg-emerald-50 border border-emerald-200 p-6 rounded-3xl text-center space-y-3">
-        <div class="text-4xl">🎉</div>
-        <h2 class="text-lg font-bold text-emerald-900">お受け取りありがとうございました！</h2>
-        <p class="text-xs text-emerald-700">またのご利用をお待ちしております。</p>
-        <button onclick="clearCustomerActiveOrder()" class="mt-2 px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl text-xs">
-          次へ進む
         </button>
       </div>
     </div>
@@ -155,19 +118,12 @@
     const STORE_PIN = "1234";
     let tapCount = 0, tapTimer = null;
     let storePeer = null, customerPeer = null, currentConn = null;
-    let statusCheckTimer = null;
     
     let orders = JSON.parse(localStorage.getItem('store_orders') || '[]');
     let totalServed = parseInt(localStorage.getItem('store_total') || '0');
     let ecoServed = parseInt(localStorage.getItem('store_eco') || '0');
     let isPaused = localStorage.getItem('store_paused') === 'true';
     let nextOrderNum = parseInt(localStorage.getItem('store_next_num') || '1');
-
-    let activeOrder = JSON.parse(localStorage.getItem('cust_active_order') || 'null');
-
-    window.onload = () => {
-      if (activeOrder) renderCustomerActiveOrder();
-    };
 
     function toggleEco() {
       const cb = document.getElementById('eco-checkbox');
@@ -187,7 +143,6 @@
 
     // --- 店舗端末の処理 ---
     function openStoreView() {
-      if (statusCheckTimer) clearInterval(statusCheckTimer);
       document.getElementById('customer-view').classList.add('hidden');
       document.getElementById('store-view').classList.remove('hidden');
 
@@ -220,10 +175,6 @@
 
             if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
             conn.send({ type: 'accepted', orderNum: newOrder.num });
-          } else if (data.type === 'cancel') {
-            orders = orders.filter(o => o.id !== data.id);
-            saveStoreData();
-            renderStoreOrders();
           }
         });
       });
@@ -282,15 +233,9 @@
             <div class="text-[10px] text-slate-400 mt-0.5">${o.time}</div>
           </div>
           <div class="flex space-x-1.5">
-            ${o.status === 'pending' ? `
-              <button onclick="callCustomer('${o.id}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm">
-                呼び出す
-              </button>
-            ` : `
-              <button onclick="finishOrder('${o.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm">
-                渡しました
-              </button>
-            `}
+            <button onclick="finishOrder('${o.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm">
+              渡しました
+            </button>
             <button onclick="removeOrder('${o.id}')" class="px-2 py-1.5 bg-slate-200 hover:bg-rose-100 text-slate-500 hover:text-rose-600 font-bold text-xs rounded-xl">
               削除
             </button>
@@ -298,15 +243,6 @@
         `;
         list.appendChild(li);
       });
-    }
-
-    function callCustomer(id) {
-      const order = orders.find(o => o.id === id);
-      if (order) {
-        order.status = 'ready';
-        saveStoreData();
-        renderStoreOrders();
-      }
     }
 
     function finishOrder(id) {
@@ -326,9 +262,10 @@
       updateStoreUI();
     }
 
-    // --- お客様側の処理 ---
+    // --- お客様側の処理（画面切り替えなし） ---
     function sendOrder() {
-      const name = document.getElementById('username').value.trim();
+      const usernameInput = document.getElementById('username');
+      const name = usernameInput.value.trim();
       const isEco = document.getElementById('eco-checkbox').checked;
 
       if (!name) {
@@ -362,9 +299,11 @@
             orderAccepted = true;
             submitBtn.disabled = false;
             submitBtn.innerText = "注文を送信する";
-            activeOrder = { id: orderId, num: data.orderNum, name: name, isEco: isEco, status: 'pending' };
-            localStorage.setItem('cust_active_order', JSON.stringify(activeOrder));
-            renderCustomerActiveOrder();
+            alert(`✅ 注文を受け付けました！\n受付番号: ${data.orderNum}`);
+            
+            // フォームのリセット（そのまま次の注文を入力可能）
+            usernameInput.value = '';
+            document.getElementById('eco-checkbox').checked = false;
           } else if (data.type === 'rejected') {
             orderAccepted = true;
             submitBtn.disabled = false;
@@ -374,62 +313,13 @@
         });
 
         setTimeout(() => {
-          if (!orderAccepted && !activeOrder) {
+          if (!orderAccepted) {
             submitBtn.disabled = false;
             submitBtn.innerText = "注文を送信する";
-            alert("❌ 店舗端末からの返答がありませんでした。もう一度お試しいただくか、窓口でお伝えください。");
+            alert("❌ 店舗端末からの返答がありませんでした。もう一度お試しいだたくか、窓口でお伝えください。");
           }
         }, 5000);
       });
-    }
-
-    function cancelOrder() {
-      if (!activeOrder) return;
-      if (customerPeer && currentConn) {
-        currentConn.send({ type: 'cancel', id: activeOrder.id });
-      }
-      clearCustomerActiveOrder();
-    }
-
-    function clearCustomerActiveOrder() {
-      if (statusCheckTimer) clearInterval(statusCheckTimer);
-      activeOrder = null;
-      localStorage.removeItem('cust_active_order');
-      document.getElementById('active-order-card').classList.add('hidden');
-      document.getElementById('completed-card').classList.add('hidden');
-      document.getElementById('order-form-card').classList.remove('hidden');
-    }
-
-    function renderCustomerActiveOrder() {
-      document.getElementById('order-form-card').classList.add('hidden');
-      document.getElementById('active-order-card').classList.remove('hidden');
-      document.getElementById('my-order-num').innerText = activeOrder.num;
-
-      const ecoNot = document.getElementById('eco-notice');
-      if (activeOrder.isEco) ecoNot.classList.remove('hidden');
-      else ecoNot.classList.add('hidden');
-
-      if (statusCheckTimer) clearInterval(statusCheckTimer);
-
-      statusCheckTimer = setInterval(() => {
-        const storedOrders = JSON.parse(localStorage.getItem('store_orders') || '[]');
-        const target = storedOrders.find(o => o.id === activeOrder.id);
-
-        if (target) {
-          if (target.status === 'ready') {
-            document.getElementById('order-status-badge').innerText = "出来上がりました";
-            document.getElementById('order-status-badge').className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-200 text-amber-900 animate-bounce";
-            document.getElementById('status-message').innerHTML = activeOrder.isEco 
-              ? "🥤 出来上がりました！<b>持参容器を持って</b>窓口へお越しください。" 
-              : "🥤 出来上がりました！窓口でお受け取りください。";
-            document.getElementById('cancel-btn').classList.add('hidden');
-          } else if (target.status === 'done') {
-            clearInterval(statusCheckTimer);
-            document.getElementById('active-order-card').classList.add('hidden');
-            document.getElementById('completed-card').classList.remove('hidden');
-          }
-        }
-      }, 1000);
     }
   </script>
 </body>
