@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>紙コップ モバイルオーダー</title>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; user-select: none; }
+    .hidden { display: none; }
+    .card { background: #f0f4f8; padding: 20px; border-radius: 8px; margin-top: 15px; }
+    .input-box { font-size: 1.1rem; padding: 10px; width: 90%; margin-bottom: 15px; }
+    .btn { background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 1.2rem; border-radius: 8px; cursor: pointer; width: 100%; }
+    .btn:active { background: #0056b3; }
+    ul { list-style: none; padding: 0; }
+    li { background: #fff; margin: 10px 0; padding: 15px; border-radius: 5px; border-left: 5px solid #007bff; font-size: 1.2rem; }
+    .user-name { font-weight: bold; color: #0056b3; }
+    .secret-trigger { margin-top: 50px; font-size: 0.75rem; color: #aaa; text-align: center; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <!-- 1. 注文画面（通常画面） -->
+  <div id="customer-view">
+    <h1>🥤 紙コップ オーダー</h1>
+    <p><input type="text" id="username" class="input-box" placeholder="お名前を入力"></p>
+    <button class="btn" onclick="sendOrder()">紙コップを1個注文する</button>
+    <p id="status"></p>
+
+    <!-- 隠しトリガー：ここを3回タップすると裏画面へ -->
+    <div class="secret-trigger" onclick="handleSecretTap()">© 2026 Water Store</div>
+  </div>
+
+  <!-- 2. 店舗受信用画面（隠し画面） -->
+  <div id="store-view" class="hidden">
+    <h1>🏪 店舗受信用画面</h1>
+    <button style="padding: 5px 10px; margin-bottom: 10px;" onclick="location.reload()">注文画面へ戻る</button>
+    <div class="card">
+      <p>ステータス: <b id="store-status">接続準備中...</b></p>
+      <h3>受信した注文一覧</h3>
+      <ul id="orders"></ul>
+    </div>
+  </div>
+
+  <script>
+    const STORE_PIN = "1234"; // 🔑 店舗用の暗証番号（自由に変更可能）
+    let tapCount = 0;
+    let tapTimer = null;
+    let peer = null;
+
+    // --- 隠しコマンド（3回連続タップ）の判定 ---
+    function handleSecretTap() {
+      tapCount++;
+      clearTimeout(tapTimer);
+
+      if (tapCount >= 3) {
+        tapCount = 0;
+        const inputPin = prompt("店舗用暗証番号を入力してください:");
+        if (inputPin === STORE_PIN) {
+          openStoreView();
+        } else if (inputPin !== null) {
+          alert("暗証番号が違います。");
+        }
+      } else {
+        tapTimer = setTimeout(() => { tapCount = 0; }, 1000); // 1秒以内に連打が必要
+      }
+    }
+
+    // --- 店舗画面の起動 ---
+    function openStoreView() {
+      document.getElementById('customer-view').classList.add('hidden');
+      document.getElementById('store-view').classList.remove('hidden');
+
+      peer = new Peer('paper-cup-store-secret');
+
+      peer.on('open', () => {
+        document.getElementById('store-status').innerText = "🟢 注文受付中";
+      });
+
+      peer.on('connection', (conn) => {
+        conn.on('data', (data) => {
+          const list = document.getElementById('orders');
+          const item = document.createElement('li');
+          const time = new Date().toLocaleTimeString();
+          item.innerHTML = `[${time}] <span class="user-name">${data.name} 様</span> ： ${data.item} × ${data.quantity}個`;
+          list.prepend(item);
+        });
+      });
+    }
+
+    // --- 注文者側の送信処理 ---
+    const customerPeer = new Peer();
+
+    function sendOrder() {
+      const nameInput = document.getElementById('username').value.trim();
+      const status = document.getElementById('status');
+
+      if (!nameInput) {
+        alert("お名前を入力してください");
+        return;
+      }
+
+      status.innerText = "送信中...";
+      const conn = customerPeer.connect('paper-cup-store-secret');
+
+      conn.on('open', () => {
+        conn.send({
+          name: nameInput,
+          item: "紙コップ",
+          quantity: 1
+        });
+        status.innerText = "✅ 注文を送信しました！";
+      });
+
+      conn.on('error', () => {
+        status.innerText = "❌ 店舗端末が受付状態になっていません。";
+      });
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
