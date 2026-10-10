@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101114">
+<meta name="description" content="クラス内の模擬通貨を安全に管理するキャッシュレス決済システム Buy-Buy">
+<title>Buy-Buy | クラスキャッシュレス</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+:root{--bg:#0b0c0f;--panel:#15171c;--panel2:#1d2027;--line:#2a2e38;--text:#f7f8fa;--muted:#9ca3b2;--accent:#b9f36b;--accent2:#8bcf3d;--danger:#ff7777;--radius:22px}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% -10%,#26351e 0,transparent 35%),var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+button,input,select{font:inherit}button{cursor:pointer;border:0}button:disabled{opacity:.45;cursor:not-allowed}.hidden{display:none!important}.muted{color:var(--muted)}.small{font-size:12px}.wrap{max-width:1120px;margin:auto;padding:22px 18px 110px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}.brand{display:flex;align-items:center;gap:11px;font-weight:900;font-size:22px;letter-spacing:-.8px}.logo{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--accent);color:#12150d;font-weight:1000;font-size:21px}.pill{border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--muted);font-size:12px}.panel{background:rgba(21,23,28,.94);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:0 18px 60px #0002}.auth{max-width:490px;margin:7vh auto}.auth h1{font-size:34px;letter-spacing:-1.3px;margin:0 0 8px}.auth .panel{padding:28px}.field{display:flex;flex-direction:column;gap:7px;margin:14px 0}.field label{font-size:13px;color:var(--muted)}input,select{width:100%;background:#0e1014;border:1px solid var(--line);border-radius:13px;padding:13px 14px;color:var(--text);outline:none;min-height:46px}input:focus,select:focus{border-color:var(--accent)}.btn{border-radius:13px;padding:13px 16px;font-weight:800;transition:.15s}.btn-primary{background:var(--accent);color:#15190f}.btn-primary:hover{background:#ceff8c}.btn-secondary{background:var(--panel2);border:1px solid var(--line);color:var(--text)}.btn-danger{background:#3a2024;color:#ffb0b0;border:1px solid #653039}.btn-block{width:100%}.btn-row{display:flex;gap:10px;flex-wrap:wrap}.notice{padding:12px 14px;border-radius:13px;background:#202b19;color:#d7ffb1;margin:12px 0;font-size:13px}.notice.error{background:#351f22;color:#ffb8bc}.hero{display:grid;grid-template-columns:1.4fr .8fr;gap:16px}.balance{background:linear-gradient(135deg,#caff85,#8bcf3d);color:#17200e;border-radius:var(--radius);padding:25px;min-height:205px;display:flex;flex-direction:column;justify-content:space-between}.balance .amount{font-size:clamp(34px,5vw,52px);font-weight:950;letter-spacing:-2px;overflow-wrap:anywhere}.balance .label{font-size:13px;font-weight:700;opacity:.75}.quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.quick button{background:var(--panel);border:1px solid var(--line);border-radius:18px;color:var(--text);padding:20px 12px;text-align:left;font-weight:800;min-height:92px}.quick button span{display:block;font-size:23px;margin-bottom:9px}.section-title{font-size:19px;font-weight:850;margin:26px 0 13px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.stat{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}.stat .num{font-size:25px;font-weight:900;margin-top:10px;overflow-wrap:anywhere}.tabs{display:flex;gap:7px;overflow-x:auto;padding:9px;background:#111318;border:1px solid var(--line);border-radius:17px;margin:22px 0;position:sticky;top:8px;z-index:5}.tab{white-space:nowrap;background:transparent;color:var(--muted);padding:10px 13px;border-radius:11px;font-weight:750}.tab.active{background:var(--accent);color:#17200e}.content-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.qr-box{background:white;border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:center;min-height:220px;margin:14px 0}.qr-box canvas,.qr-box img{max-width:100%;height:auto!important}.divider{height:1px;background:var(--line);margin:18px 0}.list{display:flex;flex-direction:column;gap:9px}.list-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;background:#101216;border:1px solid var(--line);border-radius:13px}.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:20;background:#f4f7ed;color:#15190f;padding:13px 18px;border-radius:14px;box-shadow:0 10px 40px #0008;font-weight:800;max-width:90%;text-align:center}.bottom-nav{display:none}.lock-overlay{position:fixed;inset:0;background:#08090bf5;z-index:50;display:grid;place-items:center;padding:20px}.lock-overlay .panel{width:min(430px,100%);text-align:center}.foot{margin-top:30px;color:var(--muted);font-size:11px;line-height:1.7;text-align:center}
+@media(max-width:720px){.wrap{padding:15px 13px 100px}.topbar{margin-bottom:16px}.hero{grid-template-columns:1fr}.balance{min-height:175px}.grid3{grid-template-columns:1fr}.content-grid{grid-template-columns:1fr}.panel{padding:17px}.auth{margin:3vh auto}.tabs{top:3px}.bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:10;justify-content:space-around;background:#101115ed;backdrop-filter:blur(18px);border-top:1px solid var(--line);padding:9px 4px calc(9px + env(safe-area-inset-bottom))}.bottom-nav button{background:none;color:var(--muted);font-size:11px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px}.bottom-nav b{font-size:19px}.desktop-only{display:none}.quick button{min-height:85px}.auth h1{font-size:29px}}
+</style>
+</head>
+<body>
+<div id="authView" class="wrap">
+  <div class="topbar"><div class="brand"><div class="logo">B</div>Buy-Buy</div><span class="pill">CLASS CASHLESS</span></div>
+  <div class="auth panel">
+    <div id="loginForm">
+      <h1>おかえりなさい。</h1><p class="muted">クラスのお金を、かんたん・安全に。</p>
+      <div class="field"><label for="loginId">ユーザーID</label><input id="loginId" autocomplete="username" placeholder="ユーザーIDを入力"></div>
+      <div class="field"><label for="loginPassword">パスワード（英数字8桁）</label><input id="loginPassword" type="password" autocomplete="current-password" maxlength="8" placeholder="8文字"></div>
+      <button class="btn btn-primary btn-block" onclick="login()">ログイン →</button>
+      <div class="divider"></div><button class="btn btn-secondary btn-block" onclick="showRegister()">新しいアカウントを作る</button>
+    </div>
+    <div id="registerForm" class="hidden">
+      <h1>アカウント開設</h1><p class="muted">登録すると残高0億円から始まります。</p>
+      <div class="field"><label>ユーザーID（自分で決める）</label><input id="regId" placeholder="重複しないID"></div>
+      <div class="field"><label>名前</label><input id="regName" placeholder="名前"></div>
+      <div class="field"><label>表示名</label><input id="regDisplay" placeholder="アプリに表示する名前"></div>
+      <div class="field"><label>パスワード（英数字8桁）</label><input id="regPassword" type="password" maxlength="8" placeholder="英数字8文字"></div>
+      <div class="field"><label>決済PIN（任意・6桁推奨）</label><input id="regPin" inputmode="numeric" maxlength="6" placeholder="決済時に使用"></div>
+      <button class="btn btn-primary btn-block" onclick="register()">アカウントを開設</button>
+      <button class="btn btn-secondary btn-block" style="margin-top:9px" onclick="showLogin()">ログインに戻る</button>
+    </div>
+    <div id="authMessage" aria-live="polite"></div>
+  </div>
+  <div class="foot">Buy-Buy · クラス内専用の模擬通貨システム<br>実際のお金・銀行口座とは接続されません。</div>
+</div>
+
+<div id="appView" class="wrap hidden">
+  <div class="topbar"><div class="brand"><div class="logo">B</div>Buy-Buy</div><div class="btn-row"><span class="pill" id="userBadge">ログイン中</span><button class="btn btn-secondary" onclick="lockApp()">🔒 ロック</button></div></div>
+  <div class="hero">
+    <div class="balance"><div><div class="label">MY BALANCE / 利用可能残高</div><div id="balanceAmount" class="amount">— 億円</div></div><div style="display:flex;justify-content:space-between;gap:12px;align-items:end"><div><b id="helloName">ようこそ</b><div class="label" id="userIdLabel"></div></div><span style="font-size:30px">◈</span></div></div>
+    <div class="quick">
+      <button onclick="goTab('pay')"><span>▣</span>QR決済</button>
+      <button onclick="showMyQr()"><span>▦</span>マイQR</button>
+      <button onclick="goTab('send')"><span>↗</span>送る</button>
+      <button onclick="goTab('request')"><span>↙</span>請求・受取</button>
+    </div>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="home" onclick="goTab('home')">ホーム</button>
+    <button class="tab" data-tab="send" onclick="goTab('send')">送る</button>
+    <button class="tab" data-tab="request" onclick="goTab('request')">請求</button>
+    <button class="tab" data-tab="receive" onclick="goTab('receive')">受け取る</button>
+    <button class="tab" data-tab="pay" onclick="goTab('pay')">支払う</button>
+    <button class="tab hidden" data-tab="admin" id="adminTab" onclick="goTab('admin')">管理</button>
+    <button class="tab hidden" data-tab="business" id="businessTab" onclick="goTab('business')">Business</button>
+  </div>
+  <section id="page-home">
+    <div class="section-title">クイックアクセス</div>
+    <div class="content-grid">
+      <div class="panel"><h3>📱 マイQRコード</h3><p class="muted small">相手に見せて、あなたのIDを読み取ってもらいます。</p><div id="myQr" class="qr-box"></div><div class="small muted" id="myQrCaption"></div><button class="btn btn-secondary btn-block" onclick="showMyQr()">QRコードを更新</button></div>
+      <div class="panel"><h3>🛡️ 安全に使うために</h3><div class="list"><div class="list-item"><span>画面ロック</span><button class="btn btn-secondary" onclick="lockApp()">ロックする</button></div><div class="list-item"><span>ログインID</span><b id="profileId"></b></div><div class="list-item"><span>役割</span><b id="profileRole">ユーザー</b></div></div><p class="small muted">端末を離れるときはロックしてください。パスワードやPINを他の人に教えないでください。</p></div>
+    </div>
+    <div class="section-title">取引メニュー</div><div class="grid3"><div class="stat"><div class="muted small">送金</div><div class="num">↗</div><p class="small muted">ユーザー間送金</p><button class="btn btn-secondary btn-block" onclick="goTab('send')">送金画面</button></div><div class="stat"><div class="muted small">決済</div><div class="num">▣</div><p class="small muted">店舗QRで支払う</p><button class="btn btn-secondary btn-block" onclick="goTab('pay')">決済画面</button></div><div class="stat"><div class="muted small">店舗</div><div class="num">⌂</div><p class="small muted">売上・レジ管理</p><button class="btn btn-secondary btn-block" onclick="goTab('business')">店舗を開く</button></div></div>
+  </section>
+
+  <section id="page-send" class="hidden">
+    <div class="section-title">↗ ユーザーへ送る</div><div class="panel">
+      <div class="notice">現在のGASコードにはユーザー間送金APIが含まれていません。画面は準備済みですが、送金を実行するにはバックエンドへの送金関数追加が必要です。</div>
+      <div class="field"><label>送金相手</label><select id="sendTarget"><option value="">ユーザー一覧を読み込み中…</option></select></div>
+      <div class="field"><label>金額（億円）</label><input id="sendAmount" type="number" min="1" step="1" placeholder="例：5"></div>
+      <button class="btn btn-primary btn-block" onclick="notImplemented('ユーザー間送金')">送金内容を確認</button>
+    </div>
+  </section>
+  <section id="page-request" class="hidden">
+    <div class="section-title">↙ 請求</div><div class="panel">
+      <div class="notice">請求の作成・承認APIは、提供されたGASコードにはまだありません。</div>
+      <div class="field"><label>請求する相手</label><select id="requestTarget"><option value="">ユーザー一覧を読み込み中…</option></select></div>
+      <div class="field"><label>請求金額（億円）</label><input id="requestAmount" type="number" min="1" step="1" placeholder="例：2"></div>
+      <button class="btn btn-primary btn-block" onclick="notImplemented('請求機能')">請求を作成</button>
+    </div>
+  </section>
+  <section id="page-receive" class="hidden">
+    <div class="section-title">▦ 受け取る</div><div class="content-grid">
+      <div class="panel"><h3>自分のQRコード</h3><p class="muted small">相手にこのQRを読み取ってもらいます。</p><div id="receiveQr" class="qr-box"></div><button class="btn btn-primary btn-block" onclick="showMyQr()">QRコードを表示</button></div>
+      <div class="panel"><h3>QR画像を読み取る</h3><p class="muted small">店舗またはユーザーのQR画像を選択します。</p><input type="file" id="receiveQrFile" accept="image/*" onchange="scanFile(this,'receive')"><div id="receiveScanResult" class="small muted" style="margin-top:12px">読み取り結果がここに表示されます。</div></div>
+    </div>
+  </section>
+  <section id="page-pay" class="hidden">
+    <div class="section-title">▣ QR決済</div><div class="content-grid">
+      <div class="panel"><h3>支払う</h3><div class="field"><label>店舗ID</label><input id="payStoreId" placeholder="店舗IDを入力 / QR読み取り"></div><div class="field"><label>金額（億円）</label><input id="payAmount" type="number" min="1" step="1" placeholder="例：3"></div><div class="field"><label>決済PIN（設定している場合）</label><input id="payPin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN"></div><button class="btn btn-primary btn-block" onclick="payNow()">この内容で支払う</button><div class="divider"></div><button class="btn btn-secondary btn-block" onclick="startScanner('pay')">📷 カメラで店舗QRを読み取る</button><input type="file" id="payQrFile" accept="image/*" onchange="scanFile(this,'pay')" style="margin-top:10px"><p class="small muted">カメラはHTTPSで公開されたWebアプリで利用してください。</p></div>
+      <div class="panel"><h3>店舗QRコード</h3><p class="muted small">Businessタブで店舗を選ぶと、店舗QRを表示できます。</p><div id="storeQr" class="qr-box"><span style="color:#666">店舗QRはここに表示されます</span></div><div class="field"><label>QRに表示する店舗ID</label><input id="qrStoreId" placeholder="店舗ID"></div><button class="btn btn-secondary btn-block" onclick="renderStoreQr()">店舗QRを表示</button></div>
+    </div><div id="scannerPanel" class="panel hidden" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center"><h3>QRコードをスキャン</h3><button class="btn btn-secondary" onclick="stopScanner()">閉じる</button></div><div id="qr-reader" style="width:100%;max-width:500px;margin:auto"></div><p id="scanMessage" class="muted small"></p></div>
+  </section>
+  <section id="page-admin" class="hidden">
+    <div class="section-title">⚙ 管理センター</div><div class="content-grid">
+      <div class="panel"><h3>残高チャージ</h3><div class="notice">チャージ権限はGAS側でも確認されます。7658スタッフは自分自身にチャージできません。</div><div class="field"><label>対象ユーザー</label><select id="chargeTarget"></select></div><div class="field"><label>金額（億円）</label><input id="chargeAmount" type="number" min="1" step="1" placeholder="例：10"></div><button class="btn btn-primary btn-block" onclick="charge()">チャージする</button></div>
+      <div class="panel"><h3>アカウント・店舗権限</h3><p class="muted small">Boss（IDに7869を含む）は店舗を作成できます。アカウント削除APIは未実装です。</p><div class="list-item"><span>ログインID</span><b id="adminUserId"></b></div><div class="list-item" style="margin-top:9px"><span>Boss権限</span><b id="bossState">—</b></div><div class="list-item" style="margin-top:9px"><span>チャージ権限</span><b id="chargeState">—</b></div></div>
+    </div>
+  </section>
+  <section id="page-business" class="hidden">
+    <div class="section-title">⌂ Business 店舗管理</div>
+    <div class="content-grid">
+      <div class="panel"><h3>店舗ダッシュボード</h3><div class="field"><label>店舗ID</label><input id="dashboardStoreId" placeholder="店舗ID"></div><button class="btn btn-primary btn-block" onclick="loadStoreDashboard()">売上を読み込む</button><div class="divider"></div><div class="grid3"><div class="stat"><div class="muted small">現在残高</div><div class="num" id="storeBalance">—</div><div class="small muted">億円</div></div><div class="stat"><div class="muted small">今日の売上</div><div class="num" id="todaySales">—</div><div class="small muted">億円</div></div><div class="stat"><div class="muted small">今月の売上</div><div class="num" id="monthSales">—</div><div class="small muted">億円</div></div></div><h3 id="storeDashboardName">店舗を選択してください</h3><button class="btn btn-secondary btn-block" onclick="copyStoreId()">店舗IDをコピー</button></div>
+      <div class="panel"><h3>店舗を新規開設</h3><p class="small muted">Boss専用。スタッフは最大3人まで登録できます。</p><div class="field"><label>店舗ID</label><input id="newStoreId" placeholder="例：SHOP001"></div><div class="field"><label>店舗名</label><input id="newStoreName" placeholder="例：文房具ショップ"></div><div class="field"><label>担当スタッフ1（任意）</label><select id="staff1"></select></div><div class="field"><label>担当スタッフ2（任意）</label><select id="staff2"></select></div><div class="field"><label>担当スタッフ3（任意）</label><select id="staff3"></select></div><button class="btn btn-primary btn-block" onclick="createStoreUi()">店舗を開設</button><div class="divider"></div><h3>店舗専用QR</h3><div id="businessQr" class="qr-box"></div><button class="btn btn-secondary btn-block" onclick="renderBusinessQr()">この店舗のQRを表示</button></div>
+    </div>
+    <div class="panel" style="margin-top:14px"><h3>店舗のお知らせボード</h3><p class="muted small">お知らせ保存APIは未実装のため、この画面内だけで表示します。</p><div class="field"><label>お知らせ</label><input id="storeNoticeInput" placeholder="例：本日はセール中！"></div><button class="btn btn-secondary" onclick="postNotice()">お知らせを表示</button><div id="storeNotices" class="list" style="margin-top:12px"></div></div>
+  </section>
+  <div class="foot">Buy-Buy · クラス内専用の模擬通貨システム<br>実際のお金・銀行口座とは接続されません。通信・権限チェックはGAS側で実装してください。</div>
+</div>
+
+<div id="lockOverlay" class="lock-overlay hidden"><div class="panel"><div class="logo" style="margin:0 auto 15px">B</div><h2>Buy-Buy はロック中</h2><p class="muted">続けるにはパスワードを再入力してください。</p><div class="field"><label>パスワード</label><input id="unlockPassword" type="password" maxlength="8" placeholder="英数字8桁"></div><button class="btn btn-primary btn-block" onclick="unlockApp()">ロックを解除</button><button class="btn btn-secondary btn-block" style="margin-top:9px" onclick="logout()">ログアウト</button><div id="lockMessage" class="small muted" style="margin-top:10px"></div></div></div>
+<div id="toast" class="toast hidden" role="status"></div>
+<div id="bottomNav" class="bottom-nav hidden"><button onclick="goTab('home')"><b>⌂</b>ホーム</button><button onclick="goTab('send')"><b>↗</b>送る</button><button onclick="goTab('pay')"><b>▣</b>支払う</button><button onclick="showMyQr()"><b>▦</b>マイQR</button><button onclick="goTab('business')"><b>⌘</b>店舗</button></div>
+<script>
+'use strict';
+let currentUser=null, currentPassword='', currentBalance=null, scanner=null, scannerTarget='pay', cachedUsers=[];
+const $=id=>document.getElementById(id);
+function toast(msg,error=false){const el=$('toast');el.textContent=msg;el.classList.remove('hidden');el.style.background=error?'#ffb9bd':'#f4f7ed';el.style.color='#15190f';clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>el.classList.add('hidden'),3600)}
+function setMessage(id,msg,error=false){const el=$(id);el.textContent=msg;el.className=error?'notice error':'notice';el.classList.remove('hidden')}
+function gasAvailable(){return typeof google!=='undefined'&&google.script&&google.script.run}
+function api(name,args,onSuccess){if(!gasAvailable()){toast('GAS Webアプリとして開いてください。ローカルHTMLではGAS APIに接続できません。',true);return}
+ const runner=google.script.run.withSuccessHandler(res=>{if(onSuccess)onSuccess(res)}).withFailureHandler(err=>toast('サーバーエラー：'+(err&&err.message?err.message:String(err)),true));
+ if(typeof runner[name]!=='function'){toast('GASに '+name+' 関数が見つかりません。',true);return} runner[name](...args)}
+function showLogin(){$('loginForm').classList.remove('hidden');$('registerForm').classList.add('hidden');$('authMessage').textContent=''}
+function showRegister(){$('loginForm').classList.add('hidden');$('registerForm').classList.remove('hidden');$('authMessage').textContent=''}
+function login(){const id=$('loginId').value.trim(),pw=$('loginPassword').value;if(!id||!pw){toast('IDとパスワードを入力してください。',true);return}
+ api('loginUser',[id,pw],res=>{if(!res||!res.success){toast(res?.message||'ログインできませんでした。',true);return}currentUser={id:res.userId,displayName:res.displayName,tabs:res.tabs||[]};currentPassword=pw;openApp();refreshUsers();loadBalance();toast('ログインしました。')})}
+function register(){const id=$('regId').value.trim(),name=$('regName').value.trim(),display=$('regDisplay').value.trim(),pw=$('regPassword').value,pin=$('regPin').value.trim();if(!id||!name||!display||!pw){toast('必須項目を入力してください。',true);return}if(!/^[a-zA-Z0-9]{8}$/.test(pw)){toast('パスワードは英数字8桁にしてください。',true);return}if(pin&&!/^\d{6}$/.test(pin)){toast('PINは6桁の数字で入力してください。',true);return}
+ api('registerUser',[id,name,display,pw,pin],res=>{toast(res?.message||'登録できませんでした。',!res?.success);if(res?.success){$('loginId').value=id;$('loginPassword').value=pw;showLogin()}})}
+function openApp(){$('authView').classList.add('hidden');$('appView').classList.remove('hidden');$('bottomNav').classList.remove('hidden');$('userBadge').textContent=currentUser.displayName;$('helloName').textContent=currentUser.displayName+' さん';$('userIdLabel').textContent='ID: '+currentUser.id;$('profileId').textContent=currentUser.id;$('adminUserId').textContent=currentUser.id;const boss=currentUser.id.includes('7869'),staff=currentUser.id.includes('7658');$('profileRole').textContent=boss?'Boss':staff?'チャージスタッフ':'一般ユーザー';$('bossState').textContent=boss?'あり':'なし';$('chargeState').textContent=boss||staff?'あり':'なし';$('adminTab').classList.toggle('hidden',!currentUser.tabs.includes('admin'));$('businessTab').classList.toggle('hidden',!currentUser.tabs.includes('business'));showMyQr();goTab('home')}
+function logout(){stopScanner();currentUser=null;currentPassword='';$('appView').classList.add('hidden');$('authView').classList.remove('hidden');$('bottomNav').classList.add('hidden');$('lockOverlay').classList.add('hidden');$('loginPassword').value='';showLogin()}
+function lockApp(){if(!currentUser)return;stopScanner();$('unlockPassword').value='';$('lockMessage').textContent='';$('lockOverlay').classList.remove('hidden')}
+function unlockApp(){if($('unlockPassword').value!==currentPassword){$('lockMessage').textContent='パスワードが違います。';return}$('lockOverlay').classList.add('hidden');$('unlockPassword').value='';toast('ロックを解除しました。')}
+function goTab(tab){if(!currentUser)return;if((tab==='admin'||tab==='business')&&!currentUser.tabs.includes(tab)){toast('この画面を利用する権限がありません。',true);return}document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.add('hidden'));$('page-'+tab)?.classList.remove('hidden');document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===tab));if(tab==='admin')refreshUsers();if(tab==='business')refreshUsers();if(tab==='pay'){}window.scrollTo({top:0,behavior:'smooth'})}
+function loadBalance(){if(!gasAvailable())return;api('getUserList',[],users=>{const u=(users||[]).find(x=>String(x.id)===String(currentUser.id));if(u&&typeof u.balance!=='undefined'){currentBalance=Number(u.balance);$('balanceAmount').textContent=currentBalance.toLocaleString()+' 億円'}else{$('balanceAmount').textContent='GAS要調整';$('balanceAmount').style.fontSize='26px'}})}
+function refreshUsers(){api('getUserList',[],users=>{cachedUsers=Array.isArray(users)?users:[];const options='<option value="">選択してください</option>'+cachedUsers.map(u=>`<option value="${escapeAttr(u.id)}">${escapeHtml(u.displayName||u.id)}（${escapeHtml(u.id)}）</option>`).join('');['sendTarget','requestTarget','chargeTarget','staff1','staff2','staff3'].forEach(id=>{if($(id))$(id).innerHTML=options})})}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function escapeAttr(s){return escapeHtml(s)}
+function drawQr(containerId,value){const el=$(containerId);if(!el)return;el.innerHTML='';if(typeof QRCode==='undefined'){el.textContent='QRライブラリを読み込めません。ネット接続を確認してください。';return}new QRCode(el,{text:String(value),width:190,height:190,colorDark:'#111111',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}
+function showMyQr(){if(!currentUser)return;const data=JSON.stringify({type:'buybuy-user',userId:String(currentUser.id),displayName:currentUser.displayName});drawQr('myQr',data);drawQr('receiveQr',data);$('myQrCaption').textContent=currentUser.displayName+' · ID '+currentUser.id;toast('マイQRコードを表示しました。')}
+function renderStoreQr(){const id=$('qrStoreId').value.trim();if(!id){toast('店舗IDを入力してください。',true);return}drawQr('storeQr',JSON.stringify({type:'buybuy-store',storeId:id}));}
+function renderBusinessQr(){const id=$('dashboardStoreId').value.trim()||$('newStoreId').value.trim();if(!id){toast('店舗IDを入力してください。',true);return}drawQr('businessQr',JSON.stringify({type:'buybuy-store',storeId:id}));$('qrStoreId').value=id}
+function parseQr(text){try{const o=JSON.parse(text);if(o&&o.type==='buybuy-store'&&o.storeId)return{type:'store',id:String(o.storeId)};if(o&&o.type==='buybuy-user'&&o.userId)return{type:'user',id:String(o.userId)}}catch(e){}if(text.startsWith('STORE:'))return{type:'store',id:text.slice(6).trim()};if(text.startsWith('USER:'))return{type:'user',id:text.slice(5).trim()};return null}
+function handleScanned(text,target){const parsed=parseQr(text);if(!parsed){toast('Buy-BuyのQRコードではないようです。',true);return}if(parsed.type==='store'){$('payStoreId').value=parsed.id;$('qrStoreId').value=parsed.id;$('scanMessage').textContent='店舗IDを読み取りました：'+parsed.id;toast('店舗QRを読み取りました。金額を入力してください。');goTab('pay')}else{$('sendTarget').value=parsed.id;$('requestTarget').value=parsed.id;$('scanMessage').textContent='ユーザーIDを読み取りました：'+parsed.id;toast('ユーザーQRを読み取りました。')}stopScanner()}
+async function startScanner(target){if(!window.Html5Qrcode){toast('QRスキャナーを読み込めません。',true);return}scannerTarget=target;$('scannerPanel').classList.remove('hidden');$('scanMessage').textContent='カメラを起動しています…';try{scanner=new Html5Qrcode('qr-reader');await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:230,height:230}},txt=>handleScanned(txt,target),()=>{});$('scanMessage').textContent='QRコードを枠内に合わせてください。'}catch(e){$('scanMessage').textContent='カメラを起動できません。HTTPSで開いているか、カメラ権限を確認してください。';toast('カメラを起動できませんでした。',true)}}
+async function stopScanner(){if(scanner){try{if(scanner.isScanning)await scanner.stop();scanner.clear()}catch(e){}scanner=null}$('scannerPanel').classList.add('hidden')}
+async function scanFile(input,target){const file=input.files&&input.files[0];if(!file)return;if(!window.Html5Qrcode){toast('QRスキャナーを読み込めません。',true);return}let reader;try{reader=new Html5Qrcode('qr-reader');const text=await reader.scanFile(file,true);handleScanned(text,target)}catch(e){toast('画像からQRコードを読み取れませんでした。',true)}finally{try{reader?.clear()}catch(e){}input.value=''}}
+function validAmount(value){const n=Number(value);if(!Number.isSafeInteger(n)||n<=0){toast('金額は1以上の整数（億円）で入力してください。',true);return null}return n}
+function payNow(){if(!currentUser)return;const storeId=$('payStoreId').value.trim(),amount=validAmount($('payAmount').value),pin=$('payPin').value;if(!storeId||amount===null)return;if(!confirm(`店舗 ${storeId} に ${amount.toLocaleString()} 億円を支払いますか？`))return;api('processPayment',[storeId,currentUser.id,amount,pin],res=>{toast(res?.message||'決済結果を取得できませんでした。',!res?.success);if(res?.success){$('payAmount').value='';$('payPin').value='';loadBalance()}})}
+function charge(){const target=$('chargeTarget').value,amount=validAmount($('chargeAmount').value);if(!target||amount===null){if(!target)toast('対象ユーザーを選んでください。',true);return}if(!confirm(`${target} に ${amount} 億円をチャージしますか？`))return;api('chargeBalance',[currentUser.id,target,amount],res=>{toast(res?.message||'チャージ結果を取得できませんでした。',!res?.success);if(res?.success){$('chargeAmount').value='';loadBalance()}})}
+function createStoreUi(){if(!currentUser.id.includes('7869')){toast('店舗作成はBoss専用です。',true);return}const id=$('newStoreId').value.trim(),name=$('newStoreName').value.trim();if(!id||!name){toast('店舗IDと店舗名を入力してください。',true);return}const staff1=$('staff1').value,staff2=$('staff2').value,staff3=$('staff3').value;if(!confirm(`店舗「${name}」（${id}）を開設しますか？`))return;api('createStore',[currentUser.id,id,name,staff1,staff2,staff3],res=>{toast(res?.message||'店舗を作成できませんでした。',!res?.success);if(res?.success){$('dashboardStoreId').value=id;renderBusinessQr();loadStoreDashboard()}})}
+function loadStoreDashboard(){const id=$('dashboardStoreId').value.trim();if(!id){toast('店舗IDを入力してください。',true);return}api('getStoreDashboard',[id],res=>{if(!res||!res.success){toast('店舗データを取得できませんでした。',true);return}if(!res.storeName){toast('店舗が見つからないか、IDが違います。',true);return}$('storeDashboardName').textContent=res.storeName;$('storeBalance').textContent=Number(res.currentBalance||0).toLocaleString();$('todaySales').textContent=Number(res.todaySales||0).toLocaleString();$('monthSales').textContent=Number(res.monthSales||0).toLocaleString();$('qrStoreId').value=id;renderBusinessQr()})}
+function copyStoreId(){const id=$('dashboardStoreId').value.trim();if(!id){toast('店舗IDがありません。',true);return}if(navigator.clipboard)navigator.clipboard.writeText(id).then(()=>toast('店舗IDをコピーしました。')).catch(()=>toast('店舗ID：'+id));else toast('店舗ID：'+id)}
+function postNotice(){const value=$('storeNoticeInput').value.trim();if(!value){toast('お知らせを入力してください。',true);return}const item=document.createElement('div');item.className='list-item';item.textContent=value;$('storeNotices').prepend(item);$('storeNoticeInput').value=''}
+function notImplemented(feature){toast(feature+'はGAS側APIが未実装です。画面だけで残高を変更しない設計にしています。',true)}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!$('authView').classList.contains('hidden')){if(!$('registerForm').classList.contains('hidden'))register();else login()}});
+</script>
+</body>
+</html>
