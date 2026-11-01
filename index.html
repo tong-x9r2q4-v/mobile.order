@@ -1,86 +1,491 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QRコードリーダー</title>
-    <!-- html5-qrcodeライブラリの読み込み -->
-    <script src="https://unpkg.com" type="text/javascript"></script>
-    <style>
-        body {
-            font-family: sans-serif;
-            text-align: center;
-            padding: 20px;
-            background: #f4f4f9;
-        }
-        h1 {
-            font-size: 1.2rem;
-            color: #333;
-        }
-        #reader {
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
-            background: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        #result-container {
-            margin-top: 20px;
-            padding: 15px;
-            background: #fff;
-            border-radius: 8px;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        #result {
-            word-break: break-all;
-            color: #007bff;
-            font-weight: bold;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QRコード & NFC データ一致確認ツール</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts: Inter & Noto Sans JP -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- HTML5 QR Code Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    }
+    /* scanner box dynamic overlay styling */
+    #qr-reader video {
+      border-radius: 0.75rem;
+      object-fit: cover;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .nfc-pulse {
+      animation: pulse-ring 2s infinite ease-in-out;
+    }
+  </style>
 </head>
-<body>
+<body class="bg-slate-50 min-h-screen flex flex-col justify-between text-slate-800">
 
-    <h1>カメラでQRコードを読み取る</h1>
-    
-    <!-- カメラ映像が表示されるエリア -->
-    <div id="reader"></div>
+  <!-- Header -->
+  <header class="bg-indigo-600 text-white shadow-md">
+    <div class="max-w-xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <i class="fa-solid fa-qrcode text-2xl"></i>
+        <i class="fa-solid fa-arrow-right-arrow-left text-sm opacity-75"></i>
+        <i class="fa-solid fa-nfc-symbol text-2xl"></i>
+        <h1 class="text-xl font-bold ml-2">データ一致検証ツール</h1>
+      </div>
+      <button id="btn-reset-top" onclick="resetAll()" class="text-xs bg-indigo-700 hover:bg-indigo-800 text-white py-1.5 px-3 rounded-lg transition-colors flex items-center gap-1">
+        <i class="fa-solid fa-rotate-right"></i> リセット
+      </button>
+    </div>
+  </header>
 
-    <!-- 読み取り結果が表示されるエリア -->
-    <div id="result-container">
-        <p>読み取り結果:</p>
-        <div id="result">ここに結果が表示されます</div>
+  <!-- Main Content -->
+  <main class="max-w-xl w-full mx-auto p-4 flex-grow flex flex-col gap-6">
+
+    <!-- Stepper Navigation -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+      <div class="flex items-center justify-between">
+
+        <!-- Step 1 Badge -->
+        <div id="step1-badge" class="flex flex-col items-center flex-1">
+          <div id="step1-circle" class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold mb-1 shadow-md transition-all">
+            1
+          </div>
+          <span id="step1-label" class="text-xs font-semibold text-indigo-600">QR読み取り</span>
+        </div>
+
+        <div class="h-0.5 bg-slate-200 flex-1 -mt-5">
+          <div id="progress-bar-1" class="h-0.5 bg-indigo-600 w-0 transition-all duration-300"></div>
+        </div>
+
+        <!-- Step 2 Badge -->
+        <div id="step2-badge" class="flex flex-col items-center flex-1">
+          <div id="step2-circle" class="w-10 h-10 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold mb-1 transition-all">
+            2
+          </div>
+          <span id="step2-label" class="text-xs font-semibold text-slate-400">NFC読み取り</span>
+        </div>
+
+        <div class="h-0.5 bg-slate-200 flex-1 -mt-5">
+          <div id="progress-bar-2" class="h-0.5 bg-indigo-600 w-0 transition-all duration-300"></div>
+        </div>
+
+        <!-- Step 3 Badge -->
+        <div id="step3-badge" class="flex flex-col items-center flex-1">
+          <div id="step3-circle" class="w-10 h-10 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold mb-1 transition-all">
+            3
+          </div>
+          <span id="step3-label" class="text-xs font-semibold text-slate-400">照合判定</span>
+        </div>
+
+      </div>
     </div>
 
-    <script>
-        // QRコード読み取り成功時の処理
-        function onScanSuccess(decodedText, decodedResult) {
-            // 画面に読み取ったテキストを表示
-            document.getElementById('result').innerText = decodedText;
-            
-            // 例: URLの場合はリンクにするなどの処理も可能
-            if (decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
-                document.getElementById('result').innerHTML = `<a href="${decodedText}" target="_blank">${decodedText}</a>`;
-            }
-        }
+    <!-- Browser Support Warning -->
+    <div id="nfc-support-alert" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm">
+      <div class="flex items-start">
+        <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xl mr-3 mt-0.5"></i>
+        <div>
+          <h3 class="font-bold text-amber-800 text-sm">Web NFC非対応の可能性</h3>
+          <p class="text-xs text-amber-700 mt-1">
+            お使いのブラウザ／端末はWeb NFCに対応していません。Android版 Google Chrome 等での実行を推奨します。（iOS Safariは現時点でWeb NFC非対応です）
+          </p>
+        </div>
+      </div>
+    </div>
 
-        // カメラエラーや読み取り中の非ヒット時の処理（省略・コンソール出力のみ）
-        function onScanFailure(error) {
-            // 読み取り中は毎フレーム呼ばれるため何もしなくてOKです
-        }
+    <!-- STEP 1: QR Code Scanner Section -->
+    <section id="section-step1" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center text-center">
+      <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-3">
+        <i class="fa-solid fa-qrcode text-2xl"></i>
+      </div>
+      <h2 class="text-lg font-bold text-slate-800">ステップ 1: QRコードをかざす</h2>
+      <p class="text-xs text-slate-500 mt-1 mb-4">カメラにQRコードを向けてデータを読み取ります。</p>
 
-        // スキャナーの初期化と起動
-        let html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", 
-            { fps: 10, qrbox: { width: 250, height: 250 } }, 
-            false
+      <!-- Camera viewport -->
+      <div class="w-full max-w-sm rounded-xl overflow-hidden border-2 border-dashed border-indigo-200 bg-slate-900 relative min-h-[250px] flex items-center justify-center">
+        <div id="qr-reader" class="w-full"></div>
+      </div>
+
+      <!-- Error / Status text -->
+      <p id="qr-status" class="text-xs text-slate-500 mt-3 flex items-center gap-1">
+        <i class="fa-solid fa-camera"></i> カメラを起動中...
+      </p>
+
+      <button id="btn-start-qr" onclick="startQRScanner()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-xl text-sm transition-all shadow-md active:scale-95 flex items-center gap-2">
+        <i class="fa-solid fa-camera"></i> カメラを再起動
+      </button>
+    </section>
+
+    <!-- STEP 2: NFC Reader Section -->
+    <section id="section-step2" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center text-center">
+      <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4 nfc-pulse">
+        <i class="fa-solid fa-wifi text-3xl rotate-90"></i>
+      </div>
+      <h2 class="text-lg font-bold text-slate-800">ステップ 2: NFCタグをかざす</h2>
+      <p class="text-xs text-slate-500 mt-1 mb-4">端末のNFC読み取り位置にタグを近づけてください。</p>
+
+      <!-- Display current QR data saved -->
+      <div class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 text-left">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">取得済み QRコードデータ</div>
+        <div id="display-qr-value" class="text-base font-mono font-bold text-indigo-600 break-all">---</div>
+      </div>
+
+      <!-- Reading Status Indicator -->
+      <div id="nfc-scan-card" class="w-full border-2 border-indigo-500 bg-indigo-50/50 rounded-xl p-6 flex flex-col items-center gap-2">
+        <i class="fa-solid fa-[#00a3ee] fa-spinner fa-spin text-2xl text-indigo-600"></i>
+        <p class="text-sm font-semibold text-indigo-900">NFCスキャン待機中...</p>
+        <p id="nfc-status-msg" class="text-xs text-slate-500">NFCタグを端末にかざしてください</p>
+      </div>
+
+      <div class="flex gap-2 w-full mt-4">
+        <button onclick="resetStep1()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-1">
+          <i class="fa-solid fa-arrow-left"></i> QR再読み取り
+        </button>
+        <button id="btn-trigger-nfc" onclick="startNFCScan()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-1">
+          <i class="fa-solid fa-nfc-symbol"></i> 再スキャン
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 3: Result Comparison Section -->
+    <section id="section-step3" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center">
+      
+      <!-- Match Success Card -->
+      <div id="result-match" class="hidden w-full flex flex-col items-center text-center">
+        <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-inner">
+          <i class="fa-solid fa-check text-4xl"></i>
+        </div>
+        <span class="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full mb-2">検証成功</span>
+        <h2 class="text-2xl font-extrabold text-emerald-700">データが完全一致しました！</h2>
+        <p class="text-xs text-slate-500 mt-1 mb-6">QRコードとNFCタグの内容（「<span id="match-val-preview" class="font-mono font-bold"></span>」）は一致しています。</p>
+      </div>
+
+      <!-- Mismatch Warning Card -->
+      <div id="result-mismatch" class="hidden w-full flex flex-col items-center text-center">
+        <div class="w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4 shadow-inner">
+          <i class="fa-solid fa-xmark text-4xl"></i>
+        </div>
+        <span class="inline-block bg-rose-100 text-rose-800 text-xs font-bold px-3 py-1 rounded-full mb-2">不一致エラー</span>
+        <h2 class="text-2xl font-extrabold text-rose-600">データが一致しません</h2>
+        <p class="text-xs text-slate-500 mt-1 mb-6">QRコードとNFCタグの内容が異なります。確認してください。</p>
+      </div>
+
+      <!-- Data Comparison Details Table -->
+      <div class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 gap-3 flex flex-col mb-6">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">読み取り結果の比較</h4>
+
+        <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-200">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-qrcode text-indigo-600"></i>
+            <span class="text-xs font-semibold text-slate-600">QRコード:</span>
+          </div>
+          <span id="res-qr-text" class="text-sm font-mono font-bold text-slate-800 break-all text-right ml-2">---</span>
+        </div>
+
+        <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-200">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-nfc-symbol text-blue-600"></i>
+            <span class="text-xs font-semibold text-slate-600">NFCタグ:</span>
+          </div>
+          <span id="res-nfc-text" class="text-sm font-mono font-bold text-slate-800 break-all text-right ml-2">---</span>
+        </div>
+      </div>
+
+      <button onclick="resetAll()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl text-sm transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-rotate-right"></i> 次のデータを検証する
+      </button>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-100 border-t border-slate-200 text-center py-3 text-xs text-slate-400">
+    QR & Web NFC Verification Tool • HTML5 Camera & NDEFReader
+  </footer>
+
+  <!-- App Script Logic -->
+  <script>
+    // State variables
+    let qrData = null;
+    let nfcData = null;
+    let html5QrCode = null;
+    let ndefController = null;
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      checkNFCSupport();
+      startQRScanner();
+    });
+
+    // Web NFC Support Check
+    function checkNFCSupport() {
+      if (!('NDEFReader' in window)) {
+        document.getElementById('nfc-support-alert').classList.remove('hidden');
+      }
+    }
+
+    // Step 1: Initialize Camera & QR Scanner
+    async function startQRScanner() {
+      const statusEl = document.getElementById('qr-status');
+      statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> カメラを準備中...`;
+      statusEl.className = "text-xs text-slate-500 mt-3 flex items-center gap-1";
+
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("qr-reader");
+      }
+
+      const config = {
+        fps: 10,
+        qrbox: { width: 200, height: 200 },
+        aspectRatio: 1.0
+      };
+
+      try {
+        await html5QrCode.start(
+          { facingMode: "environment" }, // Prefer back camera
+          config,
+          onQRScanSuccess,
+          onQRScanFailure
         );
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-    </script>
+        statusEl.innerHTML = `<i class="fa-solid fa-camera text-emerald-600"></i> カメラ起動完了。QRコードを枠内に合わせてください。`;
+      } catch (err) {
+        console.error("Camera start error:", err);
+        statusEl.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-500"></i> カメラの起動に失敗しました。アクセス許可を確認してください。`;
+      }
+    }
 
+    // QR Success Handler
+    function onQRScanSuccess(decodedText, decodedResult) {
+      console.log("QR Code Scanned:", decodedText);
+      qrData = decodedText;
+
+      // Play success audio feedback if available
+      beep();
+
+      // Stop scanner
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+          goToStep2();
+        }).catch(err => {
+          console.error("Failed to stop scanner:", err);
+          goToStep2();
+        });
+      } else {
+        goToStep2();
+      }
+    }
+
+    function onQRScanFailure(error) {
+      // Ignore routine scan errors (empty frames)
+    }
+
+    // Step 2 Transition
+    function goToStep2() {
+      // UI Stepper update
+      updateStepper(2);
+
+      // Section Visibility
+      document.getElementById('section-step1').classList.add('hidden');
+      document.getElementById('section-step2').classList.remove('hidden');
+      document.getElementById('section-step3').classList.add('hidden');
+
+      // Display scanned QR
+      document.getElementById('display-qr-value').innerText = qrData;
+
+      // Start NFC Reader
+      startNFCScan();
+    }
+
+    // Step 2: Web NFC Scan Logic
+    async function startNFCScan() {
+      const msgEl = document.getElementById('nfc-status-msg');
+      const cardEl = document.getElementById('nfc-scan-card');
+
+      if (!('NDEFReader' in window)) {
+        msgEl.innerHTML = `<span class="text-rose-600 font-bold">Web NFC非対応環境です。Android Chromeでお試しください。</span>`;
+        return;
+      }
+
+      try {
+        msgEl.innerText = "NFCタグをスマートフォン裏面にかざしてください...";
+        cardEl.className = "w-full border-2 border-indigo-500 bg-indigo-50/50 rounded-xl p-6 flex flex-col items-center gap-2";
+
+        // Abort previous scan if any
+        if (ndefController) {
+          ndefController.abort();
+        }
+        ndefController = new AbortController();
+
+        const ndef = new NDEFReader();
+        await ndef.scan({ signal: ndefController.signal });
+
+        ndef.addEventListener("reading", ({ message, serialNumber }) => {
+          console.log(`NFC Tag detected. Serial Number: ${serialNumber}`);
+          let readText = "";
+
+          for (const record of message.records) {
+            console.log("Record type:  " + record.recordType);
+            console.log("MIME type:    " + record.mediaType);
+
+            if (record.recordType === "text") {
+              const textDecoder = new TextDecoder(record.encoding || "utf-8");
+              readText += textDecoder.decode(record.data);
+            } else if (record.recordType === "url") {
+              const textDecoder = new TextDecoder();
+              readText += textDecoder.decode(record.data);
+            } else {
+              // Generic fallback for raw data
+              const textDecoder = new TextDecoder();
+              readText += textDecoder.decode(record.data);
+            }
+          }
+
+          if (readText) {
+            nfcData = readText;
+            beep();
+            goToStep3();
+          } else {
+            msgEl.innerText = "NFCタグからテキストデータを読み取れませんでした。";
+          }
+        });
+
+        ndef.addEventListener("readingerror", () => {
+          msgEl.innerText = "NFCの読み取りに失敗しました。もう一度近付けてください。";
+        });
+
+      } catch (error) {
+        console.error("NFC Error: ", error);
+        msgEl.innerHTML = `<span class="text-rose-600 font-bold">NFC起動エラー: ${error.message || error}</span>`;
+      }
+    }
+
+    // Step 3 Transition & Comparison
+    function goToStep3() {
+      // Stop NFC scan if running
+      if (ndefController) {
+        ndefController.abort();
+      }
+
+      updateStepper(3);
+
+      document.getElementById('section-step1').classList.add('hidden');
+      document.getElementById('section-step2').classList.add('hidden');
+      document.getElementById('section-step3').classList.remove('hidden');
+
+      // Set table values
+      document.getElementById('res-qr-text').innerText = qrData || "(空)";
+      document.getElementById('res-nfc-text').innerText = nfcData || "(空)";
+
+      const matchBox = document.getElementById('result-match');
+      const mismatchBox = document.getElementById('result-mismatch');
+
+      // Compare exact strings (trimmed to avoid accidental whitespaces)
+      const isMatch = (qrData !== null && nfcData !== null) && (qrData.trim() === nfcData.trim());
+
+      if (isMatch) {
+        matchBox.classList.remove('hidden');
+        mismatchBox.classList.add('hidden');
+        document.getElementById('match-val-preview').innerText = qrData.trim();
+      } else {
+        mismatchBox.classList.remove('hidden');
+        matchBox.classList.add('hidden');
+      }
+    }
+
+    // Stepper UI Updater
+    function updateStepper(step) {
+      const s1Circle = document.getElementById('step1-circle');
+      const s1Label = document.getElementById('step1-label');
+      const s2Circle = document.getElementById('step2-circle');
+      const s2Label = document.getElementById('step2-label');
+      const s3Circle = document.getElementById('step3-circle');
+      const s3Label = document.getElementById('step3-label');
+
+      const pb1 = document.getElementById('progress-bar-1');
+      const pb2 = document.getElementById('progress-bar-2');
+
+      // Reset styles
+      [s1Circle, s2Circle, s3Circle].forEach(el => {
+        el.className = "w-10 h-10 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold mb-1 transition-all";
+      });
+      [s1Label, s2Label, s3Label].forEach(el => {
+        el.className = "text-xs font-semibold text-slate-400";
+      });
+
+      if (step >= 1) {
+        s1Circle.className = "w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold mb-1 shadow-md transition-all";
+        s1Label.className = "text-xs font-semibold text-indigo-600";
+      }
+
+      if (step >= 2) {
+        pb1.style.width = "100%";
+        s2Circle.className = "w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold mb-1 shadow-md transition-all";
+        s2Label.className = "text-xs font-semibold text-indigo-600";
+      } else {
+        pb1.style.width = "0%";
+      }
+
+      if (step >= 3) {
+        pb2.style.width = "100%";
+        s3Circle.className = "w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold mb-1 shadow-md transition-all";
+        s3Label.className = "text-xs font-semibold text-indigo-600";
+      } else {
+        pb2.style.width = "0%";
+      }
+    }
+
+    // Reset back to Step 1
+    function resetStep1() {
+      if (ndefController) {
+        ndefController.abort();
+      }
+      qrData = null;
+      nfcData = null;
+      updateStepper(1);
+
+      document.getElementById('section-step1').classList.remove('hidden');
+      document.getElementById('section-step2').classList.add('hidden');
+      document.getElementById('section-step3').classList.add('hidden');
+
+      startQRScanner();
+    }
+
+    // Complete Reset
+    function resetAll() {
+      resetStep1();
+    }
+
+    // Simple beep sound feedback using Web Audio API
+    function beep() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "sine";
+        osc.frequency.value = 880; // A5 tone
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch(e) {
+        // Audio playback restricted or unsupported
+      }
+    }
+  </script>
 </body>
 </html>
